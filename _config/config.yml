@@ -1,7 +1,13 @@
 ---
-Name: 'csymanagement-account'
+Name: 'csymanagement-accounts'
 After: 'csymanagement/*'
 ---
 Company:
   extensions:
     - AccountCompanyExtension
+SiteConfig:
+  extensions:
+    - AccountSiteConfigExtension
+LeftAndMain:
+  extra_requirements_javascript:
+    - csymanagement-accounts/js/accounts.js

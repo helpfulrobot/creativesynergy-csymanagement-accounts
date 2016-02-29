@@ -5,6 +5,7 @@ class Account extends DataObject {
   private static $plural_name = 'Accounts';
 
   private static $db = array(
+    'Title' => 'Varchar(255)',
     'User' => 'Varchar(255)',
     'Password' => 'Text',
     'Link' => 'Text',
@@ -36,8 +37,12 @@ class Account extends DataObject {
   public function onBeforeWrite() {
     parent::onBeforeWrite();
 
+    if($this->isChanged('Link') || $this->isChanged('User') || !$this->Title) {
+      $this->Title = $this->Link . ' | ' . $this->User;
+    }
+
     if($this->PasswordInput) {
-      $this->Password = $this->setEncryptedPassword($this->PasswordInput, '123');
+      $this->Password = $this->setEncryptedPassword($this->PasswordInput, Session::get('CSYMAccountsMasterPassword'));
     }
   }
 
@@ -53,11 +58,17 @@ class Account extends DataObject {
     parent::onAfterDelete();
   }
 
-  /*
   public function canCreate($member = null) {
-    return true;
+    $can = Permission::check('ADMIN');
+    
+    if(!SiteConfig::current_site_config()->AccountsMasterPassword) {
+      $can = false;
+    }
+
+    return $can;
   }
 
+  /*
   public function canEdit($member = null) {
     return true;
   }
@@ -89,7 +100,7 @@ class Account extends DataObject {
   */
 
   public function setEncryptedPassword($password, $userSuppliedKey) {
-    global $csymAccountsSecretKey;
+    $csymAccountsSecretKey = Config::inst()->get('Account', 'secret_key');
 
     $key = $csymAccountsSecretKey . $userSuppliedKey;
 
@@ -101,10 +112,14 @@ class Account extends DataObject {
 
   public function getDecryptedPassword($userSuppliedKey = false) {
     if(!$userSuppliedKey) {
-      return false;
+      $userSuppliedKey = Session::get('CSYMAccountsMasterPassword');
+
+      if(!$userSuppliedKey) {
+        return false;
+      }
     }
 
-    global $csymAccountsSecretKey;
+    $csymAccountsSecretKey = Config::inst()->get('Account', 'secret_key');
 
     $key = $csymAccountsSecretKey . $userSuppliedKey;
 
@@ -112,9 +127,8 @@ class Account extends DataObject {
     
     if($this->Password) {
       $data = $e->decrypt($this->bin2text($this->Password), $key);
+      return $data;
     }
-
-    return $data;
   }
 
   public function text2bin($string) { 
@@ -139,8 +153,59 @@ class Account extends DataObject {
     return $txt;     
   }
 
+  // - Better Buttons
+  private static $better_buttons_actions = array(
+    'submitMasterPassword'
+  );
+
+  public function getBetterButtonsActions() {
+    $fields = parent::getBetterButtonsActions();
+
+    $fields->push(
+      $sMP = BetterButtonNestedForm::create('submitMasterPassword', 'Master-Passwort eingeben', FieldList::create(
+        PasswordField::create('MasterPassword', 'Master-Passwort')
+      ))
+    );
+
+    if(Session::get('CSYMAccountsMasterPassword')) {
+      $sMP->addExtraClass('hide-master-pw-btn');
+    }
+
+    return $fields;
+  }
+
+
+  public function submitMasterPassword($data, $form) {
+    $e = new PasswordEncryptor_MySQLPassword();
+    $pw = $data['MasterPassword'];
+    $masterHash = SiteConfig::current_site_config()->AccountsMasterPassword;
+
+    if($e->check($masterHash, $pw)) {
+      $form->sessionMessage('Passwort akzeptiert, bitte laden Sie die Seite neu.', 'good');
+      Session::set('CSYMAccountsMasterPassword', $pw);
+    } else {
+      $form->sessionMessage('Falsches Passwort', 'bad');
+    }
+  }
+
   public function getCMSFields() {
-    $decryptedPassword = $this->getDecryptedPassword('123');
+    if(!$this->getDecryptedPassword() && $this->Password) {
+      $decryptedPassword = 'Entschlüsseltes Passwort: <strong>> Bitte Master-Passwort eingeben <</strong>';
+    } else {
+      if(!$this->Password) {
+        $decryptedPassword = null;
+
+        if(Session::get('CSYMAccountsMasterPassword')) {
+          $decryptedPassword = '<strong>Noch kein Passwort hinterlegt</strong>';
+        }
+      }
+
+      if($pw = $this->getDecryptedPassword()) {
+        $decryptedPassword = 'Entschlüsseltes Passwort: <strong>' . $pw . '</strong>';
+      }
+    }
+
+    $this->checkIfPasswordIsUp2Date();
 
     $fields = FieldList::create(
       TabSet::create('Root',
@@ -149,13 +214,24 @@ class Account extends DataObject {
           // DropdownField::create('TypeID', 'Typ', AccountType::get()->map()->toArray()),
           TextField::create('Link', 'URL'),
           TextField::create('User', 'Benutzername'),
-          TextField::create('PasswordInput', 'Passwort')
-            ->setRightTitle('Entschlüsseltes Passwort: <strong>' . $decryptedPassword . '</strong>'),
+          TextField::create('PasswordInput', 'Neues Passwort')
+            ->setRightTitle($decryptedPassword),
           TextareaField::create('Comment', 'Kommentar')
         )
       )
     );
     
     return $fields;
+  }
+
+  public function checkIfPasswordIsUp2Date() {
+    $pw = Session::get('CSYMAccountsMasterPassword');
+    $masterHash = SiteConfig::current_site_config()->AccountsMasterPassword;
+
+    $e = new PasswordEncryptor_MySQLPassword();
+
+    if(!$e->check($masterHash, $pw)) {
+      Session::clear('CSYMAccountsMasterPassword');
+    }
   }
 }
