@@ -7,7 +7,9 @@ class AccountCompanyExtension extends DataExtension {
 
   public function updateCompanyCMSFields(FieldList $fields) {
     $fields->addFieldsToTab('Root.Accounts', array(
-      GridField::create('Accounts', 'Accounts', $this->owner->Accounts(), CSYGrid::create(100))
+      GridField::create('Accounts', 'Accounts', $this->owner->Accounts(), $accGridConf = CSYGrid::create(100))
     ));
+
+    $accGridConf->addComponent(new GridFieldExportAccountsAsPdfButton('before'));
   }
 }
