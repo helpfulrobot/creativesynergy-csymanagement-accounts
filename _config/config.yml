@@ -2,3 +2,6 @@
 Name: 'csymanagement-account'
 After: 'csymanagement/*'
 ---
+Company:
+  extensions:
+    - AccountCompanyExtension
