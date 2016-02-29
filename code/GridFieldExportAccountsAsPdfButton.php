@@ -19,9 +19,11 @@ class GridFieldExportAccountsAsPdfButton implements GridField_HTMLProvider, Grid
     $button->setAttribute('data-icon', 'disk');
     $button->addExtraClass('no-ajax');
 
-    return array(
-      $this->targetFragment => '<p class="grid-pdf-button">' . $button->Field() . '</p>',
-    );
+    if($gridField->getList()->first()) {
+      return array(
+        $this->targetFragment => '<p class="grid-pdf-button">' . $button->Field() . '</p>',
+      );
+    }
   }
 
   public function getActions($gridField) {

@@ -5,6 +5,14 @@ class AccountCompanyExtension extends DataExtension {
     'Accounts' => 'Account'
   );
 
+  public function onBeforeDelete() {
+    parent::onBeforeDelete();
+
+    foreach($this->owner->Accounts as $acc) {
+      $acc->delete();
+    }
+  }
+
   public function updateCompanyCMSFields(FieldList $fields) {
     $fields->addFieldsToTab('Root.Accounts', array(
       GridField::create('Accounts', 'Accounts', $this->owner->Accounts(), $accGridConf = CSYGrid::create(100))

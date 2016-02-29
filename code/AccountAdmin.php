@@ -18,12 +18,16 @@ class AccountAdmin extends ModelAdmin {
   public function getEditForm($id = null, $fields = null) {
     $form = parent::getEditForm($id, $fields);
 
-    if($this->modelClass=='Account' && $gridField=$form->Fields()->dataFieldByName($this->sanitiseClassName($this->modelClass))){
+    if($gridField=$form->Fields()->dataFieldByName($this->sanitiseClassName($this->modelClass))){
       if($gridField instanceof GridField){
         $gridField->getConfig()
-          ->addComponent(new GridFieldExportAccountsAsPdfButton('before'))
           ->removeComponentsByType('GridFieldExportButton')
           ->removeComponentsByType('GridFieldPrintButton');
+
+        if($this->modelClass=='Account') {
+          $gridField->getConfig()
+            ->addComponent(new GridFieldExportAccountsAsPdfButton('before'));
+        }
       }
     }
   
