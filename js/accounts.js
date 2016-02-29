@@ -22,4 +22,10 @@
       $(this).click();
     }
   });
+
+  $('#Form_Form_MasterPassword').entwine({
+    onmatch: function() {
+      $('#Form_Form_action_nestedFormSave').val('entschlüsseln');
+    }
+  });
 })(jQuery);
