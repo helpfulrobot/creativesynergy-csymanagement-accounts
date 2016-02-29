@@ -1,5 +1,9 @@
 <?php
 /**
+ * -----------------------------------------------------
+ * Credits go http://stackoverflow.com/a/5093422/4363418
+ * -----------------------------------------------------
+ * 
  * A class to handle secure encryption and decryption of arbitrary data
  *
  * Note that this is not just straight encryption.  It also has a few other

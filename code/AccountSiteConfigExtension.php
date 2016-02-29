@@ -44,15 +44,6 @@ class AccountSiteConfigExtension extends DataExtension {
       }
     }
 
-    // if(
-    //   ($this->owner->AccountsMasterPasswordInput && !$this->owner->AccountsMasterPasswordInputRepeat) ||
-    //   (!$this->owner->AccountsMasterPasswordInput && $this->owner->AccountsMasterPasswordInputRepeat) ||
-    //   ($this->owner->AccountsNewMasterPasswordInput && !$this->owner->AccountsNewMasterPasswordInputRepeat) ||
-    //   (!$this->owner->AccountsNewMasterPasswordInput && $this->owner->AccountsNewMasterPasswordInputRepeat))
-    // {
-    //     $validationResult->error('Beide Master-Passwort-Felder müssen ausgefüllt sein');
-    // }
-
     if(
       ($this->owner->AccountsMasterPasswordInput !== $this->owner->AccountsMasterPasswordInputRepeat) ||
       ($this->owner->AccountsNewMasterPasswordInput !== $this->owner->AccountsNewMasterPasswordInputRepeat))

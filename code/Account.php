@@ -8,13 +8,13 @@ class Account extends DataObject {
     'Title' => 'Varchar(255)',
     'User' => 'Varchar(255)',
     'Password' => 'Text',
-    'Link' => 'Text',
+    'Resource' => 'Text',
     'Comment' => 'Text'
   );
 
   private static $has_one = array(
     'Type' => 'AccountType',
-    'Customer' => 'Company'
+    'Company' => 'Company'
   );
 
   private static $belongs_to = array();
@@ -25,10 +25,50 @@ class Account extends DataObject {
     // 'RelationName' => array('FieldName' => 'FieldType')
   );
 
-  // private static $searchable_fields = array();
-  // private static $summary_fields = array();
+  public function searchableFields() {   
+    $typeField = DropdownField::create('TypeID', 'Typ', AccountType::get()->map()->toArray())
+      ->setEmptyString('(alle)');
 
-  private static $defaults = array();
+    return array (
+      'TypeID' => array(
+        'title' => 'Typ',
+        'filter' => 'ExactMatchFilter',
+        'field' => $typeField
+      ),
+      'Resource' => array(
+        'title' => 'URL / Server / IP / DB / ...',
+        'filter' => 'PartialMatchFilter'
+      ),
+      'User' => array(
+        'title' => 'Benutzername',
+        'filter' => 'PartialMatchFilter'
+      ),
+      'Company.CustomerID' => array(
+        'title' => 'Kundennummer',
+        'filter' => 'PartialMatchFilter'
+      ),
+      'Company.Title' => array(
+        'title' => 'Unternehmen',
+        'filter' => 'PartialMatchFilter'
+      ),
+      'Created' => array(
+        'title' => 'Erstellungsdatum',
+        'filter' => 'StartsWithFilter',
+        'field' => 'DateField'
+      )
+    );
+  }
+
+  private static $summary_fields = array(
+    'Type.Title' => 'Typ',
+    'Resource' => 'URL / Server / IP / DB / ...',
+    'User' => 'Benutzername',
+    'CommentAvailablbe' => 'Kommentar vorhanden',
+    'Company.Title' => 'Unternehmen',
+    'Company.CustomerID' => 'Kundenummer'
+  );
+
+  private static $default_sort = 'CompanyID, TypeID';
 
   public function populateDefaults() {
     parent::populateDefaults();
@@ -37,8 +77,13 @@ class Account extends DataObject {
   public function onBeforeWrite() {
     parent::onBeforeWrite();
 
-    if($this->isChanged('Link') || $this->isChanged('User') || !$this->Title) {
-      $this->Title = $this->Link . ' | ' . $this->User;
+    if($this->isChanged('Resource') || $this->isChanged('User') || !$this->Title) {
+      $link = null;
+      if($this->Resource) {
+        $link = $this->Resource . ' | ';
+      }
+
+      $this->Title = $link . $this->User;
     }
 
     if($this->PasswordInput) {
@@ -68,36 +113,10 @@ class Account extends DataObject {
     return $can;
   }
 
-  /*
-  public function canEdit($member = null) {
-    return true;
-  }
-
-  public function canDelete($member = null) {
-    return true;
-  }
-
-  public function canView($member = null) {
-    return true;
-  }
-  */
-
   public function getCMSValidator() {
-    // $requiredFields = parent::getCMSValidator();
-    // $requiredFields->addRequiredField('FieldName');
-    $requiredFields = RequiredFields::create('Title');
+    $requiredFields = RequiredFields::create('User', 'Password');
     return $requiredFields;
   }
-
-  /*
-  public function validate() {
-    $result = parent::validate();
-    if($this->Value == 'Key') {
-      $result->error('Custom Error Message');
-    }
-    return $result;
-  }
-  */
 
   public function setEncryptedPassword($password, $userSuppliedKey) {
     $csymAccountsSecretKey = Config::inst()->get('Account', 'secret_key');
@@ -210,13 +229,14 @@ class Account extends DataObject {
     $fields = FieldList::create(
       TabSet::create('Root',
         Tab::create('Main', 'Hauptteil',
-          DropdownField::create('CustomerID', 'Kunde', Company::get()->map()->toArray()),
-          // DropdownField::create('TypeID', 'Typ', AccountType::get()->map()->toArray()),
-          TextField::create('Link', 'URL'),
+          DropdownField::create('CompanyID', 'Kunde', Company::get()->map()->toArray()),
+          DropdownField::create('TypeID', 'Typ', AccountType::get()->map()->toArray()),
+          TextField::create('Resource', 'URL / Server / IP / DB / ...'),
           TextField::create('User', 'Benutzername'),
-          TextField::create('PasswordInput', 'Neues Passwort')
+          TextField::create('PasswordInput', 'Passwort')
             ->setRightTitle($decryptedPassword),
-          TextareaField::create('Comment', 'Kommentar')
+          TextareaField::create('Comment', 'Kommentar'),
+          LiteralField::create('LabelData', AccountType::getTypeLabels())
         )
       )
     );
@@ -233,5 +253,17 @@ class Account extends DataObject {
     if(!$e->check($masterHash, $pw)) {
       Session::clear('CSYMAccountsMasterPassword');
     }
+  }
+
+  public function CommentAvailablbe() {
+    if($this->Comment) {
+      return 'Ja';
+    } else {
+      return 'Nein';
+    }
+  }
+
+  public function TypeTitle() {
+    return $this->Type()->Title;
   }
 }

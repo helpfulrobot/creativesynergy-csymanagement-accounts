@@ -28,4 +28,36 @@
       $('#Form_Form_action_nestedFormSave').val('entschlüsseln');
     }
   });
+
+  $('#type-label-data').entwine({
+    onmatch: function() {
+      var html = $(this).html().replace('&amp;', '&'),
+          data = $.parseJSON(html);
+
+      if(data) {
+        $('#Form_ItemEditForm_TypeID').change(function() {
+          changeLabel($(this).val());
+        });
+
+        changeLabel($('#Form_ItemEditForm_TypeID').val());
+
+        function changeLabel(val) {
+          var label = $('label[for="Form_ItemEditForm_Resource"]'),
+              text = data[val],
+              labelText = 'URL / Server / IP / DB';
+
+          if(text !== null) {
+            if(text == '[leer]') {
+              $('#Form_ItemEditForm_Resource_Holder').hide();
+            } else {
+              $('#Form_ItemEditForm_Resource_Holder').show();
+              labelText = text;
+            }
+          }
+
+          label.text(labelText);
+        }
+      }
+    }
+  });
 })(jQuery);
