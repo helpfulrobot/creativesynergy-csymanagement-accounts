@@ -1,0 +1,20 @@
+{
+  "name": "creativesynergy/csymanagement-accounts",
+  "description": "accounts extension for csymanagement",
+  "keywords": [],
+  "type": "silverstripe-module",
+  "require": {
+    "creativesynergy/csymanagement-client": "dev-master"
+  },
+  "extra": {
+    "installer-name": "csymanagement-accounts"
+  },
+  "license": "BSD-3-Clause",
+  "authors": [
+    {
+      "name": "Benedikt Hofstaetter",
+      "email": "info@csy.io"
+    }
+  ],
+  "homepage": "https://github.com/creativeSynergy/csymanagement-accounts/"
+}
