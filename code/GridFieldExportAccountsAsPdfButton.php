@@ -53,10 +53,12 @@ class GridFieldExportAccountsAsPdfButton implements GridField_HTMLProvider, Grid
     $items = $gridField->getList();
 
     $companyCount = count(array_unique($items->column('CompanyID')));
+    $template = DocumentTemplate::get()->find('DocumentType', 'Account');
 
     $variables = [
       'Items' => GroupedList::create($items),
-      'CompanyCount' => $companyCount
+      'CompanyCount' => $companyCount,
+      'Template' => $template
     ];
 
     $pdf = new SS_PDF();

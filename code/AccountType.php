@@ -18,8 +18,24 @@ class AccountType extends DataObject {
     'Title' => 'Titel'
   );
 
+  // - Berechtigungen
+  public function canView($member = null) {
+    $can = Permission::check(['ADMIN', 'VIEW_ACCOUNTS']);
+    return $can;
+  }
+
+  public function canCreate($member = null) {
+    $can = Permission::check(['ADMIN', 'WRITE_ACCOUNTS']);
+    return $can;
+  }
+
+  public function canEdit($member = null) {
+    $can = Permission::check(['ADMIN', 'WRITE_ACCOUNTS']);
+    return $can;
+  }
+
   public function canDelete($member = null) {
-    $can = Permission::check('ADMIN');
+    $can = Permission::check(['ADMIN', 'WRITE_ACCOUNTS']);
     
     if($this->Accounts()->first()) {
       $can = false;
@@ -28,6 +44,7 @@ class AccountType extends DataObject {
     return $can;
   }
 
+  // - Validator
   public function getCMSValidator() {
     $requiredFields = RequiredFields::create('Title');
     return $requiredFields;

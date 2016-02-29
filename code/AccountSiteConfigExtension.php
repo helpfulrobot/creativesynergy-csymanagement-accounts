@@ -53,36 +53,39 @@ class AccountSiteConfigExtension extends DataExtension {
   }
 
   public function updateCMSFields(FieldList $fields) {
-    $fields->addFieldsToTab('Root.Accounts', array());
+    if(Permission::check(['ADMIN', 'WRITE_ACCOUNTS'])) {
+      $fields->addFieldsToTab('Root.Accounts', array());
 
-    if($this->owner->AccountsMasterPassword) {
-      $fields->addFieldsToTab('Root.Accounts', array(
-        HeaderField::create('Master-Passwort ändern', 4),
-        PasswordField::create('AccountsOldMasterPasswordInput', 'Altes Master-Passwort'),
-        PasswordField::create('AccountsNewMasterPasswordInput', 'Neues Master-Passwort'),
-        PasswordField::create('AccountsNewMasterPasswordInputRepeat', 'Neues Master-Passwort wiederholen'),
-        DropdownField::create('AccountsDeleteMasterPasswordInput', 'Master-Passwort löschen', array(
-          1 => 'Ja',
-          0 => 'Nein'
-        ), 0),
-        $warning = DisplayLogicWrapper::create(LiteralField::create('AccountsWarning', '<div class="message bad"><strong>Achtung! Wird das Master-Passwort gelöscht, werden alle gespeicherten Accounts unbrauchbar!</strong></div>')),
-        $check = DropdownField::create('AccountsDeleteMasterPasswordInputSecure', 'Wirklich löschen?', array(
-          1 => 'Ja - Passwort löschen und Accounts zerstören',
-          0 => 'Nein'
-        ), 0)
-      ));
+      if($this->owner->AccountsMasterPassword) {
+        $fields->addFieldsToTab('Root.Accounts', array(
+          HeaderField::create('Master-Passwort ändern', 4),
+          PasswordField::create('AccountsOldMasterPasswordInput', 'Altes Master-Passwort'),
+          PasswordField::create('AccountsNewMasterPasswordInput', 'Neues Master-Passwort'),
+          PasswordField::create('AccountsNewMasterPasswordInputRepeat', 'Neues Master-Passwort wiederholen'),
+          DropdownField::create('AccountsDeleteMasterPasswordInput', 'Master-Passwort löschen', array(
+            1 => 'Ja',
+            0 => 'Nein'
+          ), 0),
+          $warning = DisplayLogicWrapper::create(LiteralField::create('AccountsWarning', '<div class="message bad"><strong>Achtung! Wird das Master-Passwort gelöscht, werden alle gespeicherten Accounts unbrauchbar!</strong></div>')),
+          $check = DropdownField::create('AccountsDeleteMasterPasswordInputSecure', 'Wirklich löschen?', array(
+            1 => 'Ja - Passwort löschen und Accounts zerstören',
+            0 => 'Nein'
+          ), 0)
+        ));
 
-      $warning->displayIf('AccountsDeleteMasterPasswordInput')->isEqualTo(1);
-      $check->displayIf('AccountsDeleteMasterPasswordInput')->isEqualTo(1);
-    } else {
-      $fields->addFieldsToTab('Root.Accounts', array(
-        HeaderField::create('Master-Passwort setzen', 4),
-        PasswordField::create('AccountsMasterPasswordInput', 'Master-Passwort'),
-        PasswordField::create('AccountsMasterPasswordInputRepeat', 'Master-Passwort wiederholen')
-      ));
+        $warning->displayIf('AccountsDeleteMasterPasswordInput')->isEqualTo(1);
+        $check->displayIf('AccountsDeleteMasterPasswordInput')->isEqualTo(1);
+      } else {
+        $fields->addFieldsToTab('Root.Accounts', array(
+          HeaderField::create('Master-Passwort setzen', 4),
+          PasswordField::create('AccountsMasterPasswordInput', 'Master-Passwort'),
+          PasswordField::create('AccountsMasterPasswordInputRepeat', 'Master-Passwort wiederholen')
+        ));
+      }
     }
   }
 
+  // - Alle Accounts entschlüsseln und mit neuem PW verschlüsseln
   private function masterPasswordChanged($oldPW, $newPW) {
     $accounts = Account::get();
 

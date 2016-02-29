@@ -1,8 +1,10 @@
 <?php
-class Account extends DataObject {
+class Account extends DataObject implements PermissionProvider {
 
   private static $singular_name = 'Account';
   private static $plural_name = 'Accounts';
+
+  private $firstWrite = false;
 
   private static $db = array(
     'Title' => 'Varchar(255)',
@@ -15,14 +17,6 @@ class Account extends DataObject {
   private static $has_one = array(
     'Type' => 'AccountType',
     'Company' => 'Company'
-  );
-
-  private static $belongs_to = array();
-  private static $has_many = array();
-  private static $many_many = array();
-  private static $belongs_many_many = array();
-  private static $many_many_extraFields = array(
-    // 'RelationName' => array('FieldName' => 'FieldType')
   );
 
   public function searchableFields() {   
@@ -70,10 +64,6 @@ class Account extends DataObject {
 
   private static $default_sort = 'CompanyID, TypeID';
 
-  public function populateDefaults() {
-    parent::populateDefaults();
-  }
-
   public function onBeforeWrite() {
     parent::onBeforeWrite();
 
@@ -89,22 +79,47 @@ class Account extends DataObject {
     if($this->PasswordInput) {
       $this->Password = $this->setEncryptedPassword($this->PasswordInput, Session::get('CSYMAccountsMasterPassword'));
     }
+
+    if(!$this->ID) {
+      $this->firstWrite = true;
+    }
   }
 
   public function onAfterWrite() {
     parent::onAfterWrite();
+
+    if($this->firstWrite) {
+      $activity = Activity::create();
+      $activity->MemberID = Member::currentUserID();
+      $activity->CompanyID = $this->CompanyID;
+      $activity->Title = $this->Type()->Title . ' Account wurde angelegt';
+      $activity->Description = 'Benutzer: ' . $this->User . ' ID: ' . $this->ID;
+      $activity->EditLink = $this->EditLink();
+      $activity->Type = 1;
+      $activity->write();
+    }
   }
 
   public function onBeforeDelete() {
     parent::onBeforeDelete();
+
+    $activity = Activity::create();
+    $activity->MemberID = Member::currentUserID();
+    $activity->CompanyID = $this->CompanyID;
+    $activity->Title = $this->Type()->Title . ' Account wurde gelöscht';
+    $activity->Description = 'ID: ' . $this->ID . ' Benutzer: ' . $this->User;
+    $activity->Type = 3;
+    $activity->write();
   }
 
-  public function onAfterDelete() {
-    parent::onAfterDelete();
+  // - Berechtigungen
+  public function canView($member = null) {
+    $can = Permission::check(['ADMIN', 'VIEW_ACCOUNTS']);
+    return $can;
   }
 
   public function canCreate($member = null) {
-    $can = Permission::check('ADMIN');
+    $can = Permission::check(['ADMIN', 'WRITE_ACCOUNTS']);
     
     if(!SiteConfig::current_site_config()->AccountsMasterPassword) {
       $can = false;
@@ -113,11 +128,23 @@ class Account extends DataObject {
     return $can;
   }
 
+  public function canEdit($member = null) {
+    $can = Permission::check(['ADMIN', 'WRITE_ACCOUNTS']);
+    return $can;
+  }
+
+  public function canDelete($member = null) {
+    $can = Permission::check(['ADMIN', 'WRITE_ACCOUNTS']);
+    return $can;
+  }
+
+  // - Validator
   public function getCMSValidator() {
     $requiredFields = RequiredFields::create('User', 'Password');
     return $requiredFields;
   }
 
+  // - Passwort verschlüsseln
   public function setEncryptedPassword($password, $userSuppliedKey) {
     $csymAccountsSecretKey = Config::inst()->get('Account', 'secret_key');
 
@@ -129,6 +156,7 @@ class Account extends DataObject {
     return $this->text2bin($encryptedData);
   }
 
+  // - Entschlüsseltes Passwort holen
   public function getDecryptedPassword($userSuppliedKey = false) {
     if(!$userSuppliedKey) {
       $userSuppliedKey = Session::get('CSYMAccountsMasterPassword');
@@ -150,6 +178,7 @@ class Account extends DataObject {
     }
   }
 
+  // - Password in Binary wandeln damit es in die DB geschrieben werden kann
   public function text2bin($string) { 
     $bin = null;
 
@@ -161,6 +190,7 @@ class Account extends DataObject {
     return $bin; 
   } 
 
+  // - Password in Text wandeln
   public function bin2text($binstr) { 
     $txt = null;
 
@@ -193,7 +223,7 @@ class Account extends DataObject {
     return $fields;
   }
 
-
+  // - Master Passwort in Session speichern
   public function submitMasterPassword($data, $form) {
     $e = new PasswordEncryptor_MySQLPassword();
     $pw = $data['MasterPassword'];
@@ -207,6 +237,7 @@ class Account extends DataObject {
     }
   }
 
+  // - Felder definieren
   public function getCMSFields() {
     if(!$this->getDecryptedPassword() && $this->Password) {
       $decryptedPassword = 'Entschlüsseltes Passwort: <strong>> Bitte Master-Passwort eingeben <</strong>';
@@ -244,6 +275,7 @@ class Account extends DataObject {
     return $fields;
   }
 
+  // - Überprüfen ob das PW in der Session das richtige ist
   public function checkIfPasswordIsUp2Date() {
     $pw = Session::get('CSYMAccountsMasterPassword');
     $masterHash = SiteConfig::current_site_config()->AccountsMasterPassword;
@@ -255,6 +287,7 @@ class Account extends DataObject {
     }
   }
 
+  // - Kommentar vorhanden
   public function CommentAvailablbe() {
     if($this->Comment) {
       return 'Ja';
@@ -263,7 +296,35 @@ class Account extends DataObject {
     }
   }
 
+  // - Typentitel für die Gruppierung
   public function TypeTitle() {
     return $this->Type()->Title;
   }
+
+  // - Berechtigungen erstellen
+  public function providePermissions() {
+    return array(
+      'VIEW_ACCOUNTS' => array(
+        'name' => 'Kann Accounts einsehen',
+        'category' => 'Accounts',
+        'sort' => 100
+      ),
+      'WRITE_ACCOUNTS' => array(
+        'name' => 'Kann Accounts erzeugen und bearbeiten',
+        'category' => 'Accounts',
+        'sort' => 200
+      ),
+      'CHANGE_ACCOUNT_MASTERPW' => array(
+        'name' => 'Kann das Master-Passwort verändern oder löschen',
+        'category' => 'Accounts',
+        'sort' => 300
+      )
+    );
+  }
+
+  // - Edit- / Adminlink
+  public function EditLink() {
+    return "/admin/unternehmen/Company/EditForm/field/Company/item/$this->CompanyID/ItemEditForm/field/Accounts/item/$this->ID";
+  }
+
 }

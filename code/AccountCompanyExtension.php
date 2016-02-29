@@ -14,10 +14,12 @@ class AccountCompanyExtension extends DataExtension {
   }
 
   public function updateCompanyCMSFields(FieldList $fields) {
-    $fields->addFieldsToTab('Root.Accounts', array(
-      GridField::create('Accounts', 'Accounts', $this->owner->Accounts(), $accGridConf = CSYGrid::create(100))
-    ));
+    if(Permission::check(['ADMIN', 'VIEW_ACCOUNTS']) && $this->owner->ID) {
+      $fields->addFieldsToTab('Root.Accounts', array(
+        GridField::create('Accounts', 'Accounts', $this->owner->Accounts(), $accGridConf = CSYGrid::create(100))
+      ));
 
-    $accGridConf->addComponent(new GridFieldExportAccountsAsPdfButton('before'));
+      $accGridConf->addComponent(new GridFieldExportAccountsAsPdfButton('before'));
+    }
   }
 }
