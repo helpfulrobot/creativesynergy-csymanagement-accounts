@@ -21,7 +21,7 @@ class GridFieldExportAccountsAsPdfButton implements GridField_HTMLProvider, Grid
 
     $items = $gridField->getList();
     
-    if($items->first() && Account::checkIfPasswordIsUp2Date()) {
+    if($items->first() && Account::checkIfPasswordIsUp2Date(true)) {
       if(count(array_unique($items->column('CompanyID'))) == 1) {
         return array(
           $this->targetFragment => '<p class="grid-pdf-button">' . $button->Field() . '</p>',
