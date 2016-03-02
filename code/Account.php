@@ -23,6 +23,9 @@ class Account extends DataObject implements PermissionProvider {
     $typeField = DropdownField::create('TypeID', 'Typ', AccountType::get()->map()->toArray())
       ->setEmptyString('(alle)');
 
+    $companyField = DropdownField::create('CompanyID', 'Unternehmen', $this->CompanyWithCustomerID())
+      ->setEmptyString('(alle)');
+
     return array (
       'TypeID' => array(
         'title' => 'Typ',
@@ -37,13 +40,10 @@ class Account extends DataObject implements PermissionProvider {
         'title' => 'Benutzername',
         'filter' => 'PartialMatchFilter'
       ),
-      'Company.CustomerID' => array(
-        'title' => 'Kundennummer',
-        'filter' => 'PartialMatchFilter'
-      ),
-      'Company.Title' => array(
+      'CompanyID' => array(
         'title' => 'Unternehmen',
-        'filter' => 'PartialMatchFilter'
+        'filter' => 'ExactMatchFilter',
+        'field' => $companyField
       ),
       'Created' => array(
         'title' => 'Erstellungsdatum',
@@ -57,6 +57,7 @@ class Account extends DataObject implements PermissionProvider {
     'Type.Title' => 'Typ',
     'Resource' => 'URL / Server / IP / DB / ...',
     'User' => 'Benutzername',
+    'getNiceEncryptedPassword' => 'Passwort',
     'CommentAvailablbe' => 'Kommentar vorhanden',
     'Company.Title' => 'Unternehmen',
     'Company.CustomerID' => 'Kundenummer'
@@ -178,6 +179,15 @@ class Account extends DataObject implements PermissionProvider {
     }
   }
 
+  public function getNiceEncryptedPassword() {
+    $pw = $this->getDecryptedPassword();
+    if(!$pw) {
+      return '********';
+    } else {
+      return $pw;
+    }
+  }
+
   // - Password in Binary wandeln damit es in die DB geschrieben werden kann
   public function text2bin($string) { 
     $bin = null;
@@ -230,7 +240,7 @@ class Account extends DataObject implements PermissionProvider {
     $masterHash = SiteConfig::current_site_config()->AccountsMasterPassword;
 
     if($e->check($masterHash, $pw)) {
-      $form->sessionMessage('Passwort akzeptiert, bitte laden Sie die Seite neu.', 'good');
+      $form->sessionMessage('Passwort akzeptiert! Die Seite wird jetzt neu geladen.', 'good master-password-accepted');
       Session::set('CSYMAccountsMasterPassword', $pw);
     } else {
       $form->sessionMessage('Falsches Passwort', 'bad');
@@ -239,6 +249,8 @@ class Account extends DataObject implements PermissionProvider {
 
   // - Felder definieren
   public function getCMSFields() {
+    $pwLabel = 'Passwort';
+    
     if(!$this->getDecryptedPassword() && $this->Password) {
       $decryptedPassword = 'Entschlüsseltes Passwort: <strong>> Bitte Master-Passwort eingeben <</strong>';
     } else {
@@ -252,10 +264,11 @@ class Account extends DataObject implements PermissionProvider {
 
       if($pw = $this->getDecryptedPassword()) {
         $decryptedPassword = 'Entschlüsseltes Passwort: <strong>' . $pw . '</strong>';
+        $pwLabel = 'Neues Passwort';
       }
     }
 
-    $this->checkIfPasswordIsUp2Date();
+    Account::checkIfPasswordIsUp2Date();
 
     $fields = FieldList::create(
       TabSet::create('Root',
@@ -264,7 +277,7 @@ class Account extends DataObject implements PermissionProvider {
           DropdownField::create('TypeID', 'Typ', AccountType::get()->map()->toArray()),
           TextField::create('Resource', 'URL / Server / IP / DB / ...'),
           TextField::create('User', 'Benutzername'),
-          TextField::create('PasswordInput', 'Passwort')
+          TextField::create('PasswordInput', $pwLabel)
             ->setRightTitle($decryptedPassword),
           TextareaField::create('Comment', 'Kommentar'),
           LiteralField::create('LabelData', AccountType::getTypeLabels())
@@ -276,7 +289,8 @@ class Account extends DataObject implements PermissionProvider {
   }
 
   // - Überprüfen ob das PW in der Session das richtige ist
-  public function checkIfPasswordIsUp2Date() {
+  public static function checkIfPasswordIsUp2Date($return = false) {
+    $valid = false;
     $pw = Session::get('CSYMAccountsMasterPassword');
     $masterHash = SiteConfig::current_site_config()->AccountsMasterPassword;
 
@@ -284,6 +298,12 @@ class Account extends DataObject implements PermissionProvider {
 
     if(!$e->check($masterHash, $pw)) {
       Session::clear('CSYMAccountsMasterPassword');
+    } else {
+      $valid = true;
+    }
+
+    if($return) {
+      return $valid;
     }
   }
 

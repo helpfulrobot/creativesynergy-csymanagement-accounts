@@ -26,9 +26,16 @@
   });
 
   // - Titel des Buttons ändern
-  $('#Form_Form_MasterPassword').entwine({
+  $('#Form_Form_MasterPassword:not(.no-js)').entwine({
     onmatch: function() {
       $('#Form_Form_action_nestedFormSave').val('entschlüsseln');
+    }
+  });
+
+  // - Autoreload wenn PW richtig
+  $('.betterbuttons-nested-form .message.good.master-password-accepted').entwine({
+    onmatch: function() {
+      window.parent.location.reload();
     }
   });
 

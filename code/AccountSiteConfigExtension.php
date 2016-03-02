@@ -8,21 +8,23 @@ class AccountSiteConfigExtension extends DataExtension {
   public function onBeforeWrite() {
     parent::onBeforeWrite();
 
-    if($this->owner->AccountsMasterPasswordInput) {
-      $e = new PasswordEncryptor_MySQLPassword();
+    if(Permission::check(['ADMIN', 'WRITE_ACCOUNTS'])) {
+      if($this->owner->AccountsMasterPasswordInput) {
+        $e = new PasswordEncryptor_MySQLPassword();
 
-      $this->owner->AccountsMasterPassword = $e->encrypt($this->owner->AccountsMasterPasswordInput);
-    }
+        $this->owner->AccountsMasterPassword = $e->encrypt($this->owner->AccountsMasterPasswordInput);
+      }
 
-    if($this->owner->AccountsOldMasterPasswordInput && $this->owner->AccountsNewMasterPasswordInput) {
-      $this->masterPasswordChanged($this->owner->AccountsOldMasterPasswordInput, $this->owner->AccountsNewMasterPasswordInput);
+      if($this->owner->AccountsOldMasterPasswordInput && $this->owner->AccountsNewMasterPasswordInput) {
+        $this->masterPasswordChanged($this->owner->AccountsOldMasterPasswordInput, $this->owner->AccountsNewMasterPasswordInput);
 
-      $e = new PasswordEncryptor_MySQLPassword();
-      $this->owner->AccountsMasterPassword = $e->encrypt($this->owner->AccountsNewMasterPasswordInput);
-    }
+        $e = new PasswordEncryptor_MySQLPassword();
+        $this->owner->AccountsMasterPassword = $e->encrypt($this->owner->AccountsNewMasterPasswordInput);
+      }
 
-    if($this->owner->AccountsDeleteMasterPasswordInput && $this->owner->AccountsDeleteMasterPasswordInputSecure) {
-      $this->owner->AccountsMasterPassword = null;
+      if($this->owner->AccountsDeleteMasterPasswordInput && $this->owner->AccountsDeleteMasterPasswordInputSecure) {
+        $this->owner->AccountsMasterPassword = null;
+      }
     }
   }
 

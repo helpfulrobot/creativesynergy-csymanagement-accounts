@@ -19,10 +19,14 @@ class GridFieldExportAccountsAsPdfButton implements GridField_HTMLProvider, Grid
     $button->setAttribute('data-icon', 'disk');
     $button->addExtraClass('no-ajax');
 
-    if($gridField->getList()->first()) {
-      return array(
-        $this->targetFragment => '<p class="grid-pdf-button">' . $button->Field() . '</p>',
-      );
+    $items = $gridField->getList();
+    
+    if($items->first() && Account::checkIfPasswordIsUp2Date()) {
+      if(count(array_unique($items->column('CompanyID'))) == 1) {
+        return array(
+          $this->targetFragment => '<p class="grid-pdf-button">' . $button->Field() . '</p>',
+        );
+      }
     }
   }
 

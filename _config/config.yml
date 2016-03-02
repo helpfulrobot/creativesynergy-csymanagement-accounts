@@ -8,6 +8,9 @@ Company:
 DocumentTemplate:
   extensions:
     - AccountDocumentTemplateExtension
+EmailTemplate:
+  extensions:
+    - AccountEmailTemplateExtension
 SiteConfig:
   extensions:
     - AccountSiteConfigExtension
