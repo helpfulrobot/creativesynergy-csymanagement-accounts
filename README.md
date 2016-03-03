@@ -6,10 +6,9 @@
 
 add to your mysite/_config/config.yml and change the secret_key to an long and random generated string
 
-
 ```
 Account:
-  secret_key: 'SOOOSECRET' # if changed, stored accounts will be lost
+  secret_key: 'SECRET256BitKey' # if changed, stored accounts will be lost
 ```
 
-add ```@import '../../csymanagement-accounts/scss/pdf';``` to the end of csymanagemnt-client/scss/pdf.scss
+compile scss under ```csymanagement-client```
