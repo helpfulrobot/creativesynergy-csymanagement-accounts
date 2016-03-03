@@ -58,7 +58,7 @@
       <% if $Items && $CompanyCount <= 1 %>
         <div id="accounts">
           <% loop $Items.GroupedBy(TypeTitle) %>
-            <div class="account-group account-type-$Children.First.TypeID">
+            <div class="account-group account-type-$Children.First.TypeID <% if $Children.Count < 2 %>no-pagebreak<% end_if %>">
               <strong>$TypeTitle</strong>
               <div class="accounts <% if $Children.First.Type.Label == [leer] %>hide-first<% end_if %>">
                 <div class="accounts-head cf">

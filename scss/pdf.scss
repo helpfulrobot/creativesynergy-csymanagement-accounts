@@ -9,6 +9,10 @@
   // padding-bottom: $dist;
   // border-bottom: 2pt solid $fc;
 
+  &.no-pagebreak {
+    page-break-inside: avoid;
+  }
+
   &:last-of-type {
     border-bottom: none;
     margin-bottom: 0;
@@ -78,15 +82,15 @@
       text-align: left;
 
       &.resource {
-        width: 70mm;
+        width: 65mm;
       }
 
       &.user {
-        width: 46.25mm;
+        width: 61mm;
       }
 
       &.password {
-        width: 46.25mm;
+        width: 36.5mm;
         margin-right: 0;
       }
     }
