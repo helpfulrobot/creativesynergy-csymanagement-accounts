@@ -8,7 +8,7 @@ class AccountCompanyExtension extends DataExtension {
   public function onBeforeDelete() {
     parent::onBeforeDelete();
 
-    foreach($this->owner->Accounts as $acc) {
+    foreach($this->owner->Accounts() as $acc) {
       $acc->delete();
     }
   }
